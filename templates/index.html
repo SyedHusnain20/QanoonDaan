@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0d1117" />
+  <title>QanoonDaan ⚖️ — Pakistani Legal Assistant</title>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+
+<body>
+
+  <!-- ── Ambient Background ─────────────────────────────── -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="app">
+
+    <!-- ── Header ─────────────────────────────────────────── -->
+    <header>
+      <div class="logo">⚖️</div>
+      <div class="header-text">
+        <h1>Qanoon<span>Daan</span></h1>
+        <p>Pakistani Legal Advisory Assistant</p>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" onclick="toggleTheme()"
+        aria-label="Toggle dark/light mode">
+        <div class="toggle-thumb" id="toggle-thumb">🌙</div>
+      </button>
+    </header>
+
+    <!-- ── Chat Window ────────────────────────────────────── -->
+    <div class="chat-window" id="chat-window">
+      <div class="welcome" id="welcome">
+        <span class="welcome-icon">⚖️</span>
+        <h2>Your Legal Guide</h2>
+        <p>Ask me anything about Pakistani law — in English, Roman Urdu, or اردو</p>
+        <div class="samples">
+          <button class="sample-btn" onclick="askSample(this)">What is the punishment for theft in Pakistan?</button>
+          <button class="sample-btn" onclick="askSample(this)">What are my rights if arrested without a
+            warrant?</button>
+          <button class="sample-btn" onclick="askSample(this)">How can a woman file for divorce in Pakistan?</button>
+          <button class="sample-btn" onclick="askSample(this)">What does PECA say about cyberbullying?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Input Area ─────────────────────────────────────── -->
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="question" rows="1" placeholder="Ask a legal question... / قانونی سوال پوچھیں..."
+          onkeydown="handleKey(event)" oninput="autoResize(this)" aria-label="Your legal question"></textarea>
+        <button id="mic-btn" onclick="toggleVoice()" aria-label="Voice input">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+            <line x1="8" y1="22" x2="16" y2="22"></line>
+          </svg>
+          <div class="lang-dot"></div>
+        </button>
+        <button id="send-btn" onclick="sendQuestion()" aria-label="Send question">➤</button>
+      </div>
+      <p class="input-hint" id="input-hint">Press Enter to send &nbsp;·&nbsp; Hold mic to switch language</p>
+    </div>
+
+  </div>
+
+  <script>
+    const chatWindow = document.getElementById('chat-window');
+    const welcome = document.getElementById('welcome');
+    const input = document.getElementById('question');
+    const sendBtn = document.getElementById('send-btn');
+    const micBtn = document.getElementById('mic-btn');
+
+    // ── Detect mobile ─────────────────────────────────────
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      document.getElementById('input-hint').textContent = 'Tap ➤ to send · Tap mic to speak · Hold mic to switch language';
+    }
+
+    // ── Auto-resize textarea ──────────────────────────────
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+    }
+
+    // ── Enter key (desktop only) ──────────────────────────
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+        e.preventDefault();
+        sendQuestion();
+      }
+    }
+
+    // ── Sample question ───────────────────────────────────
+    function askSample(btn) {
+      input.value = btn.textContent.trim();
+      autoResize(input);
+      sendQuestion();
+    }
+
+    // ── Append message bubble ─────────────────────────────
+    function appendMessage(role, content) {
+      const msg = document.createElement('div');
+      msg.className = `message ${role}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = role === 'user' ? '👤' : '⚖️';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = content;
+
+      msg.appendChild(avatar);
+      msg.appendChild(bubble);
+      chatWindow.appendChild(msg);
+      scrollToBottom();
+      return bubble;
+    }
+
+    // ── Typing indicator ──────────────────────────────────
+    function showTyping() {
+      const msg = document.createElement('div');
+      msg.className = 'message bot';
+      msg.id = 'typing-indicator';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = '⚖️';
+
+      const typing = document.createElement('div');
+      typing.className = 'typing';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+
+      msg.appendChild(avatar);
+      msg.appendChild(typing);
+      chatWindow.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function removeTyping() {
+      const el = document.getElementById('typing-indicator');
+      if (el) el.remove();
+    }
+
+    function scrollToBottom() {
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // ── Send question ─────────────────────────────────────
+    async function sendQuestion() {
+      const question = input.value.trim();
+      if (!question) return;
+
+      if (welcome) welcome.style.display = 'none';
+      appendMessage('user', escapeHtml(question));
+
+      input.value = '';
+      input.style.height = 'auto';
+      sendBtn.disabled = true;
+      // Blur on mobile so keyboard closes after send
+      if (isMobile) input.blur();
+
+      showTyping();
+
+      try {
+        const formData = new FormData();
+        formData.append('question', question);
+
+        const res = await fetch('/ask', { method: 'POST', body: formData });
+        const data = await res.json();
+        removeTyping();
+
+        if (data.error) {
+          appendMessage('bot', `<span style="color:#f85149;">⚠️ ${escapeHtml(data.error)}</span>`);
+        } else {
+          const content =
+            `<div>${escapeHtml(data.answer)}</div>` +
+            `<div class="disclaimer">${escapeHtml(data.disclaimer)}</div>`;
+          appendMessage('bot', content);
+        }
+      } catch (err) {
+        removeTyping();
+        appendMessage('bot', '<span style="color:#f85149;">⚠️ Connection error. Please try again.</span>');
+      }
+
+      sendBtn.disabled = false;
+      if (!isMobile) input.focus();
+    }
+
+    // ── Voice Input ───────────────────────────────────────
+    let recognition = null;
+    let isListening = false;
+    const voiceLangs = [
+      { code: 'en-US', label: 'EN' },
+      { code: 'ur-PK', label: 'UR' },
+    ];
+    let langIndex = 0;
+
+    function toggleVoice() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Voice input requires Chrome or Edge browser.');
+        return;
+      }
+      if (isListening) { recognition.stop(); return; }
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      recognition.lang = voiceLangs[langIndex].code;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+      };
+
+      recognition.onresult = (e) => {
+        input.value = e.results[0][0].transcript;
+        autoResize(input);
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        if (input.value.trim()) sendQuestion();
+      };
+
+      recognition.onerror = (e) => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        if (e.error !== 'aborted') alert('Mic error: ' + e.error);
+      };
+
+      recognition.start();
+    }
+
+    // ── Language switch — long press (mobile) or right-click (desktop)
+    let pressTimer = null;
+
+    function switchLang() {
+      langIndex = (langIndex + 1) % voiceLangs.length;
+      if (langIndex === 1) {
+        micBtn.classList.add('urdu');
+      } else {
+        micBtn.classList.remove('urdu');
+      }
+      // Brief visual feedback
+      micBtn.style.transform = 'scale(0.9)';
+      setTimeout(() => micBtn.style.transform = '', 150);
+    }
+
+    // Long press on mobile (500ms)
+    micBtn.addEventListener('touchstart', () => {
+      pressTimer = setTimeout(switchLang, 500);
+    }, { passive: true });
+
+    micBtn.addEventListener('touchend', () => {
+      clearTimeout(pressTimer);
+    });
+
+    // Right-click on desktop
+    micBtn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      switchLang();
+    });
+
+    // ── Theme Toggle ──────────────────────────────────────
+    const thumb = document.getElementById('toggle-thumb');
+
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light');
+      thumb.textContent = isLight ? '☀️' : '🌙';
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', isLight ? '#f4f6f0' : '#0d1117');
+      localStorage.setItem('qd-theme', isLight ? 'light' : 'dark');
+    }
+
+    (function () {
+      const saved = localStorage.getItem('qd-theme');
+      if (saved === 'light') {
+        document.body.classList.add('light');
+        thumb.textContent = '☀️';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f4f6f0');
+      }
+    })();
+
+    // ── Escape HTML ───────────────────────────────────────
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '<br>');
+    }
+  </script>
+
+</body>
+
+</html>

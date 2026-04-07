@@ -1,0 +1,21 @@
+# Virtual environment — never include
+.venv/
+venv/
+env/
+
+# Secrets — never include
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git
+.git/
+.gitignore
+
+# Dev files
+*.md
+*.log
