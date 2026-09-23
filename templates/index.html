@@ -25,27 +25,72 @@
 
     <!-- ── Header ─────────────────────────────────────────── -->
     <header>
-      <div class="logo">⚖️</div>
+      <!-- Logo: scales of justice icon -->
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20"/>
+          <path d="M3 9h18"/>
+          <path d="M3 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+          <path d="M21 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+          <path d="M9 22h6"/>
+        </svg>
+      </div>
       <div class="header-text">
         <h1>Qanoon<span>Daan</span></h1>
-        <p>Pakistani Legal Advisory Assistant</p>
+        <p>Pakistani Legal Information Assistant</p>
       </div>
+      <!-- About page link -->
+      <a href="/about" class="about-link" title="About QanoonDaan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="8.01"/>
+          <line x1="12" y1="12" x2="12" y2="16"/>
+        </svg>
+        <span>About</span>
+      </a>
+
+      <!-- Theme toggle with moon/sun SVG icons -->
       <button class="theme-toggle" id="theme-toggle" title="Toggle theme" onclick="toggleTheme()"
         aria-label="Toggle dark/light mode">
-        <div class="toggle-thumb" id="toggle-thumb">🌙</div>
+        <div class="toggle-thumb" id="toggle-thumb">
+          <!-- Moon icon (dark mode default) -->
+          <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <!-- Sun icon (light mode) -->
+          <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </div>
       </button>
     </header>
 
     <!-- ── Chat Window ────────────────────────────────────── -->
     <div class="chat-window" id="chat-window">
       <div class="welcome" id="welcome">
-        <span class="welcome-icon">⚖️</span>
+        <!-- Scales of justice welcome icon -->
+        <span class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20"/>
+            <path d="M3 9h18"/>
+            <path d="M3 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+            <path d="M21 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+            <path d="M9 22h6"/>
+          </svg>
+        </span>
         <h2>Your Legal Guide</h2>
         <p>Ask me anything about Pakistani law — in English, Roman Urdu, or اردو</p>
         <div class="samples">
           <button class="sample-btn" onclick="askSample(this)">What is the punishment for theft in Pakistan?</button>
-          <button class="sample-btn" onclick="askSample(this)">What are my rights if arrested without a
-            warrant?</button>
+          <button class="sample-btn" onclick="askSample(this)">What are my rights if arrested without a warrant?</button>
           <button class="sample-btn" onclick="askSample(this)">How can a woman file for divorce in Pakistan?</button>
           <button class="sample-btn" onclick="askSample(this)">What does PECA say about cyberbullying?</button>
         </div>
@@ -58,7 +103,8 @@
         <textarea id="question" rows="1" placeholder="Ask a legal question... / قانونی سوال پوچھیں..."
           onkeydown="handleKey(event)" oninput="autoResize(this)" aria-label="Your legal question"></textarea>
         <button id="mic-btn" onclick="toggleVoice()" aria-label="Voice input">
-          <svg viewBox="0 0 24 24">
+          <!-- Microphone SVG icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
             <line x1="12" y1="19" x2="12" y2="22"></line>
@@ -66,9 +112,16 @@
           </svg>
           <div class="lang-dot"></div>
         </button>
-        <button id="send-btn" onclick="sendQuestion()" aria-label="Send question">➤</button>
+        <!-- Send button with paper-plane SVG icon -->
+        <button id="send-btn" onclick="sendQuestion()" aria-label="Send question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
       </div>
       <p class="input-hint" id="input-hint">Press Enter to send &nbsp;·&nbsp; Hold mic to switch language</p>
+      <p class="app-footer">QanoonDaan provides general legal information only, not legal advice. Consult a qualified lawyer for your specific situation.</p>
     </div>
 
   </div>
@@ -79,6 +132,10 @@
     const input = document.getElementById('question');
     const sendBtn = document.getElementById('send-btn');
     const micBtn = document.getElementById('mic-btn');
+
+    // ── Chat history (last 5 exchanges = 10 messages) ─────
+    const MAX_HISTORY = 10; // 5 user + 5 assistant turns
+    let chatHistory = [];
 
     // ── Detect mobile ─────────────────────────────────────
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -107,6 +164,24 @@
       sendQuestion();
     }
 
+    // ── Bot avatar SVG (scales of justice) ───────────────
+    function botAvatarSVG() {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v20"/><path d="M3 9h18"/>
+        <path d="M3 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+        <path d="M21 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+        <path d="M9 22h6"/>
+      </svg>`;
+    }
+
+    // ── User avatar SVG (person icon) ────────────────────
+    function userAvatarSVG() {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>`;
+    }
+
     // ── Append message bubble ─────────────────────────────
     function appendMessage(role, content) {
       const msg = document.createElement('div');
@@ -114,7 +189,7 @@
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
-      avatar.textContent = role === 'user' ? '👤' : '⚖️';
+      avatar.innerHTML = role === 'user' ? userAvatarSVG() : botAvatarSVG();
 
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
@@ -135,7 +210,7 @@
 
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
-      avatar.textContent = '⚖️';
+      avatar.innerHTML = botAvatarSVG();
 
       const typing = document.createElement('div');
       typing.className = 'typing';
@@ -167,7 +242,6 @@
       input.value = '';
       input.style.height = 'auto';
       sendBtn.disabled = true;
-      // Blur on mobile so keyboard closes after send
       if (isMobile) input.blur();
 
       showTyping();
@@ -175,6 +249,7 @@
       try {
         const formData = new FormData();
         formData.append('question', question);
+        formData.append('history', JSON.stringify(chatHistory));
 
         const res = await fetch('/ask', { method: 'POST', body: formData });
         const data = await res.json();
@@ -187,6 +262,13 @@
             `<div>${escapeHtml(data.answer)}</div>` +
             `<div class="disclaimer">${escapeHtml(data.disclaimer)}</div>`;
           appendMessage('bot', content);
+
+          // Update history — keep last MAX_HISTORY messages
+          chatHistory.push({ role: 'user', content: question });
+          chatHistory.push({ role: 'assistant', content: data.answer });
+          if (chatHistory.length > MAX_HISTORY) {
+            chatHistory = chatHistory.slice(chatHistory.length - MAX_HISTORY);
+          }
         }
       } catch (err) {
         removeTyping();
@@ -244,7 +326,7 @@
       recognition.start();
     }
 
-    // ── Language switch — long press (mobile) or right-click (desktop)
+    // ── Language switch
     let pressTimer = null;
 
     function switchLang() {
@@ -254,12 +336,10 @@
       } else {
         micBtn.classList.remove('urdu');
       }
-      // Brief visual feedback
       micBtn.style.transform = 'scale(0.9)';
       setTimeout(() => micBtn.style.transform = '', 150);
     }
 
-    // Long press on mobile (500ms)
     micBtn.addEventListener('touchstart', () => {
       pressTimer = setTimeout(switchLang, 500);
     }, { passive: true });
@@ -268,18 +348,19 @@
       clearTimeout(pressTimer);
     });
 
-    // Right-click on desktop
     micBtn.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       switchLang();
     });
 
     // ── Theme Toggle ──────────────────────────────────────
-    const thumb = document.getElementById('toggle-thumb');
+    const iconMoon = document.getElementById('icon-moon');
+    const iconSun = document.getElementById('icon-sun');
 
     function toggleTheme() {
       const isLight = document.body.classList.toggle('light');
-      thumb.textContent = isLight ? '☀️' : '🌙';
+      iconMoon.style.display = isLight ? 'none' : 'block';
+      iconSun.style.display = isLight ? 'block' : 'none';
       document.querySelector('meta[name="theme-color"]').setAttribute('content', isLight ? '#f4f6f0' : '#0d1117');
       localStorage.setItem('qd-theme', isLight ? 'light' : 'dark');
     }
@@ -288,7 +369,8 @@
       const saved = localStorage.getItem('qd-theme');
       if (saved === 'light') {
         document.body.classList.add('light');
-        thumb.textContent = '☀️';
+        iconMoon.style.display = 'none';
+        iconSun.style.display = 'block';
         document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f4f6f0');
       }
     })();

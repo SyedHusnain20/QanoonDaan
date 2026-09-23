@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # ← this line loads your .env file
+load_dotenv() 
 
 # ── Groq API ────────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")

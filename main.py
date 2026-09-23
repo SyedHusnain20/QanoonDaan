@@ -1,6 +1,6 @@
 """
 main.py — QanoonDaan
-─────────────────────────────────────────────────────────────
+──────────
 FastAPI web server
 → Serves the chat UI (HTML)
 → Accepts user questions via POST /ask
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     print("🛑 QanoonDaan shutting down.")
 
 
-# ── FastAPI app ────────────────────────────────────────────────────────────────
+# ── FastAPI app ──
 app = FastAPI(
     title=APP_TITLE,
     description=APP_DESCRIPTION,
@@ -47,14 +47,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── Mount static files (CSS) ───────────────────────────────────────────────────
+# ── Mount static files (CSS) ──
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# ── Jinja2 templates (HTML) ────────────────────────────────────────────────────
+# ── Jinja2 templates (HTML) ─
 templates = Jinja2Templates(directory="templates")
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# ── Routes ──
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -64,14 +64,19 @@ async def home(request: Request):
         {"request": request, "title": APP_TITLE},
     )
 
+@app.get("/about", response_class=HTMLResponse)
+async def about(request: Request):
+    return templates.TemplateResponse("about.html", {"request": request})
 
 @app.post("/ask", response_class=JSONResponse)
-async def ask(question: str = Form(...)):
+async def ask(question: str = Form(...), history: str = Form(default="[]")):
     """
     Receive a legal question from the UI.
     Run the full RAG pipeline.
     Return answer + sources + disclaimer as JSON.
     """
+    import json as _json
+
     # Basic validation
     question = question.strip()
     if not question:
@@ -87,7 +92,12 @@ async def ask(question: str = Form(...)):
         )
 
     try:
-        result = get_legal_answer(question)
+        chat_history = _json.loads(history)
+    except Exception:
+        chat_history = []
+
+    try:
+        result = get_legal_answer(question, history=chat_history)
         return JSONResponse(content={
             "answer":     result["answer"],
             "sources":    result["sources"],
@@ -108,7 +118,7 @@ async def health():
     return {"status": "ok", "app": APP_TITLE}
 
 
-# ── Run directly ───────────────────────────────────────────────────────────────
+# ── Run directly ────────────
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

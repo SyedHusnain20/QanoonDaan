@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>About — QanoonDaan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg:           #0d1117;
+      --bg-card:      rgba(22, 27, 34, 0.75);
+      --bg-input:     rgba(28, 33, 40, 0.7);
+      --border:       rgba(42, 52, 65, 0.6);
+      --green:        #1a7f4f;
+      --green-light:  #22a863;
+      --green-glow:   rgba(26, 127, 79, 0.22);
+      --green-dim:    rgba(26, 127, 79, 0.08);
+      --gold:         #c9a84c;
+      --gold-dim:     rgba(201, 168, 76, 0.12);
+      --text:         #e6edf3;
+      --text-muted:   #8b949e;
+      --text-dim:     #6e7681;
+      --glass-border: rgba(255, 255, 255, 0.07);
+      --radius:       18px;
+      --shadow:       0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    /* ── Reset ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient background ──────────────────────────────────── */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.45;
+      animation: float 14s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 50vw; height: 50vw; background: rgba(26,127,79,0.28);  top: -12vw; left: -12vw; }
+    .orb-2 { width: 40vw; height: 40vw; background: rgba(201,168,76,0.13); bottom: -10vw; right: -8vw; animation-delay: -5s; }
+    .orb-3 { width: 30vw; height: 30vw; background: rgba(34,168,99,0.18);  top: 40%; left: 50%; animation-delay: -9s; }
+
+    @keyframes float {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(30px,30px) scale(1.1); }
+    }
+
+    /* ── Background pattern ─────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(45deg,  transparent, transparent 40px, rgba(26,127,79,0.03) 40px, rgba(26,127,79,0.03) 41px),
+        repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(26,127,79,0.03) 40px, rgba(26,127,79,0.03) 41px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout wrapper ─────────────────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+      /* safe area for notched phones */
+      padding-left: max(24px, env(safe-area-inset-left));
+      padding-right: max(24px, env(safe-area-inset-right));
+    }
+
+    /* ── Nav ─────────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(13,17,23,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      margin: 0 -24px;
+      padding: 14px 24px;
+      /* notch-aware padding */
+      padding-left: max(24px, env(safe-area-inset-left));
+      padding-right: max(24px, env(safe-area-inset-right));
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--green), var(--green-light));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px var(--green-glow);
+      flex-shrink: 0;
+    }
+
+    .nav-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-wordmark {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .nav-wordmark span { color: var(--gold); }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 16px;
+      transition: all 0.2s;
+      min-height: 44px; /* touch target */
+    }
+    .nav-link svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .nav-link:hover {
+      color: var(--text);
+      border-color: var(--green);
+      background: var(--green-dim);
+    }
+
+    /* ── Hero ────────────────────────────────────────────────── */
+    .hero {
+      padding: 72px 0 56px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.72rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: pulse-gold 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-gold {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 20px;
+      letter-spacing: -0.01em;
+    }
+    .hero h1 em { font-style: italic; color: var(--gold); }
+
+    .hero-sub {
+      font-size: clamp(0.95rem, 2vw, 1.1rem);
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto;
+      font-weight: 300;
+      line-height: 1.7;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 56px 0;
+    }
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+    }
+    .divider-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--green-dim);
+      border: 1px solid rgba(26,127,79,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .divider-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--green-light);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Section label ───────────────────────────────────────── */
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green-light);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--green-light);
+    }
+
+    /* ── Mission ─────────────────────────────────────────────── */
+    .mission {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .mission-main {
+      grid-column: 1 / -1;
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+    }
+    .mission-main::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(to right, var(--green), var(--gold), transparent);
+    }
+    .mission-main h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      line-height: 1.3;
+    }
+    .mission-main p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.75;
+      max-width: 620px;
+    }
+    .mission-main p + p { margin-top: 12px; }
+
+    .mission-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .mission-stat::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, var(--green-dim), transparent);
+    }
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* ── Pipeline ────────────────────────────────────────────── */
+    .pipeline { display: flex; flex-direction: column; gap: 2px; }
+
+    .pipe-step {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 0 20px;
+      position: relative;
+    }
+    .pipe-step:not(:last-child) .pipe-num::after {
+      content: '';
+      position: absolute;
+      left: 25px;
+      top: 52px;
+      bottom: -2px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--green-dim), transparent);
+    }
+    .pipe-num {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 4px;
+    }
+    .pipe-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--green-dim);
+      border: 1px solid rgba(26,127,79,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.25s;
+    }
+    .pipe-step:hover .pipe-circle {
+      background: rgba(26,127,79,0.18);
+      border-color: var(--green-light);
+      box-shadow: 0 0 16px var(--green-glow);
+    }
+    .pipe-circle svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--green-light);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .pipe-body {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: border-color 0.25s;
+    }
+    .pipe-step:hover .pipe-body { border-color: rgba(26,127,79,0.2); }
+    .pipe-body h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .pipe-body p {
+      font-size: 0.87rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .pipe-tag {
+      display: inline-block;
+      margin-top: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.67rem;
+      background: var(--green-dim);
+      border: 1px solid rgba(26,127,79,0.2);
+      color: var(--green-light);
+      border-radius: 6px;
+      padding: 3px 8px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Stack chips ─────────────────────────────────────────── */
+    .stack-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .stack-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+    }
+    .stack-chip:hover { border-color: rgba(26,127,79,0.25); color: var(--text); }
+    .stack-chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Developer card ──────────────────────────────────────── */
+    .dev-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 32px;
+      align-items: start;
+      position: relative;
+      overflow: hidden;
+    }
+    .dev-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(to right, var(--gold), var(--green), transparent);
+    }
+
+    /* ── Developer avatar (photo) ────────────────────────────── */
+    .dev-avatar-link {
+      text-decoration: none;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .dev-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2.5px solid var(--green);
+      box-shadow: 0 0 0 4px rgba(26,127,79,0.15), 0 0 28px var(--green-glow);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .dev-avatar-link:hover .dev-avatar {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 5px rgba(26,127,79,0.25), 0 0 36px var(--green-glow);
+    }
+
+    .dev-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    /* portfolio tooltip on hover */
+    .dev-avatar-link {
+      position: relative;
+    }
+    .dev-avatar-link::after {
+      content: 'View Portfolio ↗';
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--green-light);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .dev-avatar-link:hover::after { opacity: 1; }
+
+    .dev-info { min-width: 0; }
+
+    .dev-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .dev-role {
+      font-size: 0.78rem;
+      color: var(--gold);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+    }
+    .dev-bio {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 520px;
+      margin-bottom: 20px;
+    }
+    .dev-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .dev-link {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 16px;
+      transition: all 0.2s;
+      min-height: 44px; /* touch target */
+    }
+    .dev-link svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .dev-link:hover {
+      color: var(--text);
+      border-color: var(--green);
+      background: var(--green-dim);
+    }
+    /* Portfolio link highlighted */
+    .dev-link.portfolio {
+      border-color: rgba(201,168,76,0.35);
+      color: var(--gold);
+    }
+    .dev-link.portfolio:hover {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    /* ── Other Projects ──────────────────────────────────────── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 30px 28px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .project-card:hover {
+      border-color: rgba(26,127,79,0.35);
+      transform: translateY(-3px);
+    }
+    .project-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .project-card.shariah::before {
+      background: linear-gradient(to right, var(--gold), var(--green), transparent);
+    }
+    .project-card.resufit::before {
+      background: linear-gradient(to right, #58a6ff, var(--green-light), transparent);
+    }
+
+    .project-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .project-card.shariah .project-icon {
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,168,76,0.2);
+    }
+    .project-card.resufit .project-icon {
+      background: rgba(88,166,255,0.08);
+      border: 1px solid rgba(88,166,255,0.2);
+    }
+    .project-card.shariah .project-icon svg { stroke: var(--gold); }
+    .project-card.resufit  .project-icon svg { stroke: #58a6ff; }
+    .project-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Image-based project icon — stays same box as SVG version */
+    .project-icon-img {
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    .project-icon-img img {
+      width: 46px;
+      height: 46px;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      border-radius: 13px;
+    }
+    .project-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .project-card.shariah .project-name span { color: var(--gold); }
+    .project-card.resufit  .project-name span { color: #58a6ff; }
+
+    .project-desc {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      flex: 1;
+    }
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .project-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      border-radius: 6px;
+      padding: 3px 8px;
+      letter-spacing: 0.03em;
+    }
+    .project-card.shariah .project-tag {
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,168,76,0.18);
+      color: var(--gold);
+    }
+    .project-card.resufit .project-tag {
+      background: rgba(88,166,255,0.07);
+      border: 1px solid rgba(88,166,255,0.18);
+      color: #58a6ff;
+    }
+    .project-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 14px;
+      border-top: 1px solid var(--glass-border);
+      margin-top: auto;
+    }
+    .project-live {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--green-light);
+    }
+    .project-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green-light);
+      animation: pulse-gold 2.5s ease-in-out infinite;
+    }
+    .project-arrow {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .project-card:hover .project-arrow {
+      border-color: var(--green-light);
+      background: var(--green-dim);
+    }
+    .project-arrow svg {
+      width: 13px;
+      height: 13px;
+      stroke: var(--text-muted);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.2s;
+    }
+    .project-card:hover .project-arrow svg { stroke: var(--green-light); }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 28px 24px max(40px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--glass-border);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    footer a {
+      color: var(--green-light);
+      text-decoration: none;
+    }
+
+    /* ── Fade-in animation ───────────────────────────────────── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ════════════════════════════════════════════════════════
+       RESPONSIVE — mobile-first, three breakpoints
+       ════════════════════════════════════════════════════════ */
+
+    /* ── Base mobile (<480px) ────────────────────────────────── */
+    @media (max-width: 480px) {
+
+      /* Layout */
+      .page { padding: 0 14px 80px; }
+
+      /* Nav */
+      nav { margin: 0 -14px; padding: 12px 14px; }
+      .nav-wordmark { font-size: 1rem; }
+      .nav-link { padding: 6px 10px; font-size: 0.76rem; }
+      .nav-link span { display: none; }   /* icon only on tiny screens */
+
+      /* Hero */
+      .hero { padding: 44px 0 36px; }
+      .hero h1 { font-size: 1.85rem; line-height: 1.2; }
+      .hero-badge { font-size: 0.65rem; padding: 5px 11px; margin-bottom: 20px; }
+      .hero-sub { font-size: 0.88rem; }
+
+      /* Dividers — tighter */
+      .divider { margin: 36px 0; }
+
+      /* Mission */
+      .mission { grid-template-columns: 1fr; gap: 12px; }
+      .mission-main { padding: 20px 18px; }
+      .mission-main h2 { font-size: 1.2rem; }
+      .mission-main p  { font-size: 0.88rem; }
+      .mission-stat {
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px;
+      }
+      .stat-value { font-size: 1.8rem; flex-shrink: 0; }
+      .stat-label { font-size: 0.78rem; }
+
+      /* Pipeline */
+      .pipe-step { grid-template-columns: 36px 1fr; gap: 0 12px; }
+      .pipe-circle { width: 36px; height: 36px; }
+      .pipe-circle svg { width: 15px; height: 15px; }
+      .pipe-step:not(:last-child) .pipe-num::after { left: 17px; top: 38px; }
+      .pipe-body { padding: 16px 16px; }
+      .pipe-body h3 { font-size: 0.95rem; }
+      .pipe-body p  { font-size: 0.82rem; }
+      .pipe-tag { font-size: 0.62rem; }
+
+      /* Stack chips — 2 per row */
+      .stack-grid { gap: 8px; }
+      .stack-chip { font-size: 0.75rem; padding: 7px 11px; }
+
+      /* Developer card — stacked, centered portrait */
+      .dev-card {
+        grid-template-columns: 1fr;
+        padding: 24px 18px;
+        gap: 0;
+        text-align: center;
+      }
+      .dev-avatar-link {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .dev-avatar { width: 82px; height: 82px; }
+      .dev-avatar-link::after { display: none; }
+      .dev-name { font-size: 1.2rem; }
+      .dev-role { font-size: 0.72rem; margin-bottom: 12px; }
+      .dev-bio  { font-size: 0.85rem; max-width: 100%; margin-bottom: 16px; }
+      .dev-links {
+        justify-content: center;
+        gap: 8px;
+      }
+      .dev-link { font-size: 0.75rem; padding: 6px 12px; }
+
+      /* Projects — single column */
+      .projects-grid { grid-template-columns: 1fr; gap: 14px; }
+      .project-card { padding: 22px 18px; gap: 12px; }
+      .project-name { font-size: 1.05rem; }
+      .project-desc { font-size: 0.82rem; }
+      .project-tag  { font-size: 0.62rem; }
+      .project-icon { width: 40px; height: 40px; border-radius: 11px; }
+      .project-icon svg { width: 19px; height: 19px; }
+
+      /* Footer */
+      footer { font-size: 0.72rem; padding: 22px 14px 36px; }
+    }
+
+    /* ── Mid mobile (481px–640px) ────────────────────────────── */
+    @media (min-width: 481px) and (max-width: 640px) {
+
+      .page { padding: 0 18px 90px; }
+      nav { margin: 0 -18px; padding: 13px 18px; }
+
+      .hero { padding: 52px 0 40px; }
+      .hero h1 { font-size: 2.1rem; }
+      .hero-sub { font-size: 0.92rem; }
+
+      .divider { margin: 44px 0; }
+
+      .mission { grid-template-columns: 1fr; gap: 14px; }
+      .mission-main { padding: 24px 22px; }
+      .mission-main h2 { font-size: 1.3rem; }
+      .mission-stat {
+        flex-direction: row;
+        align-items: center;
+        gap: 18px;
+        padding: 20px 22px;
+      }
+      .stat-value { font-size: 2rem; flex-shrink: 0; }
+
+      .pipe-step { grid-template-columns: 40px 1fr; gap: 0 14px; }
+      .pipe-circle { width: 38px; height: 38px; }
+      .pipe-circle svg { width: 16px; height: 16px; }
+      .pipe-step:not(:last-child) .pipe-num::after { left: 19px; top: 40px; }
+      .pipe-body { padding: 18px 20px; }
+
+      .dev-card {
+        grid-template-columns: 1fr;
+        padding: 28px 24px;
+        gap: 0;
+      }
+      .dev-avatar-link {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 22px;
+      }
+      .dev-avatar { width: 86px; height: 86px; }
+      .dev-avatar-link::after { display: none; }
+      .dev-name { font-size: 1.25rem; }
+      .dev-bio  { font-size: 0.87rem; }
+      .dev-links { gap: 8px; }
+
+      .projects-grid { grid-template-columns: 1fr; gap: 14px; }
+      .project-card { padding: 24px 20px; }
+
+      .nav-link span { display: none; }
+    }
+
+    /* ── Tablet (641px–860px) ────────────────────────────────── */
+    @media (min-width: 641px) and (max-width: 860px) {
+
+      .page { padding: 0 28px 100px; }
+      nav { margin: 0 -28px; padding: 14px 28px; }
+
+      .hero { padding: 60px 0 48px; }
+      .hero h1 { font-size: 2.8rem; }
+
+      .mission { grid-template-columns: 1fr 1fr; }
+      .mission-main { padding: 28px 32px; }
+
+      .dev-card { padding: 30px 32px; gap: 24px; }
+      .dev-avatar { width: 80px; height: 80px; }
+
+      .projects-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── Touch — remove hover effects that feel broken on mobile ─ */
+    @media (hover: none) {
+      .project-card:hover { transform: none; }
+      .dev-avatar-link:hover .dev-avatar { transform: none; }
+      .pipe-step:hover .pipe-circle { background: var(--green-dim); border-color: rgba(26,127,79,0.3); box-shadow: none; }
+      .pipe-step:hover .pipe-body { border-color: var(--glass-border); }
+    }
+
+    /* ── Reduced motion ──────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .orb, .hero-badge-dot, .project-live-dot { animation: none; }
+      .fade-up { transition: none; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Ambient -->
+  <div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- ── Nav ──────────────────────────────────────────────── -->
+  <nav>
+    <a href="/" class="nav-logo">
+      <div class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2v20"/><path d="M3 9h18"/>
+          <path d="M3 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+          <path d="M21 9l3 6c0 1.657-1.343 3-3 3s-3-1.343-3-3l3-6z"/>
+          <path d="M9 22h6"/>
+        </svg>
+      </div>
+      <span class="nav-wordmark">Qanoon<span>Daan</span></span>
+    </a>
+    <a href="/" class="nav-link">
+      <svg viewBox="0 0 24 24">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>Ask a Question</span>
+    </a>
+  </nav>
+
+  <div class="page">
+
+    <!-- ── Hero ─────────────────────────────────────────────── -->
+    <section class="hero fade-up">
+      <div class="hero-badge">
+        <div class="hero-badge-dot"></div>
+        Pakistani Legal AI
+      </div>
+      <h1>Law, made <em>legible</em><br>for everyone.</h1>
+      <p class="hero-sub">QanoonDaan is a free AI assistant that answers questions about Pakistani law in plain language — in English, Roman Urdu, or اردو.</p>
+    </section>
+
+    <!-- ── Mission ───────────────────────────────────────────── -->
+    <div class="divider fade-up">
+      <div class="divider-line"></div>
+      <div class="divider-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.01"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+      </div>
+      <div class="divider-line"></div>
+    </div>
+
+    <section class="fade-up">
+      <div class="section-label">Mission</div>
+      <div class="mission">
+        <div class="mission-main">
+          <h2>Access to legal knowledge should not depend on who you can afford.</h2>
+          <p>Pakistan has a 220 million strong population, and most people have never consulted a lawyer. Legal jargon, high fees, and language barriers keep ordinary citizens from understanding their own rights — even when those rights are being violated.</p>
+          <p>QanoonDaan was built to change that. By grounding AI responses in actual Pakistani statutes, it gives anyone with a phone the ability to ask a legal question and get a clear, cited, and honest answer — with a consistent reminder to consult a qualified lawyer for their specific situation.</p>
+        </div>
+        <div class="mission-stat fade-up">
+          <div class="stat-value">3+</div>
+          <div class="stat-label">Languages supported — English, Roman Urdu, and اردو</div>
+        </div>
+        <div class="mission-stat fade-up">
+          <div class="stat-value">RAG</div>
+          <div class="stat-label">Retrieval-Augmented Generation — answers grounded in real statutes, not guesswork</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── How it works ──────────────────────────────────────── -->
+    <div class="divider fade-up">
+      <div class="divider-line"></div>
+      <div class="divider-icon">
+        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <div class="divider-line"></div>
+    </div>
+
+    <section class="fade-up">
+      <div class="section-label">How it works</div>
+      <div class="pipeline">
+
+        <div class="pipe-step fade-up">
+          <div class="pipe-num">
+            <div class="pipe-circle">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+          </div>
+          <div class="pipe-body">
+            <h3>You ask a question</h3>
+            <p>Type or speak your question in any language — English, Roman Urdu, or Urdu script. The system detects your language automatically and handles the query accordingly.</p>
+            <span class="pipe-tag">Multilingual Input · Voice Recognition</span>
+          </div>
+        </div>
+
+        <div class="pipe-step fade-up">
+          <div class="pipe-num">
+            <div class="pipe-circle">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+          </div>
+          <div class="pipe-body">
+            <h3>Retrieval across Pakistani statutes</h3>
+            <p>A hybrid retrieval engine combines BM25 keyword search with dense vector similarity to find the most relevant sections from a curated database of Pakistani laws — from the PPC to PECA to the Family Laws Ordinance.</p>
+            <span class="pipe-tag">BM25 · FAISS Vector Search · Section-Number Boosting</span>
+          </div>
+        </div>
+
+        <div class="pipe-step fade-up">
+          <div class="pipe-num">
+            <div class="pipe-circle">
+              <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </div>
+          </div>
+          <div class="pipe-body">
+            <h3>Grounded answer generation</h3>
+            <p>Retrieved sections are passed to a large language model (Llama 3.3-70B via Groq) with a hardened prompt that instructs the model to cite statutory sources, avoid hallucination, and always recommend professional legal advice for case-specific situations.</p>
+            <span class="pipe-tag">Llama 3.3-70B · Groq · Anti-Hallucination Prompting</span>
+          </div>
+        </div>
+
+        <div class="pipe-step fade-up">
+          <div class="pipe-num">
+            <div class="pipe-circle">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 5.93 5.93l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+          </div>
+          <div class="pipe-body">
+            <h3>Answer delivered — and also on WhatsApp</h3>
+            <p>You get a clear, plain-language answer with a legal disclaimer. The same pipeline runs inside a WhatsApp bot via the Meta Cloud API, meaning QanoonDaan works on any phone without needing a browser.</p>
+            <span class="pipe-tag">FastAPI · WhatsApp Bot · Meta Cloud API</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tech stack chips -->
+      <div class="stack-grid fade-up">
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#22a863;"></div>Python · FastAPI</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#c9a84c;"></div>FAISS · BM25</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#58a6ff;"></div>Llama 3.3-70B</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#f78166;"></div>Groq Inference</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#3fb950;"></div>Hugging Face Spaces</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#22a863;"></div>Meta Cloud API</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#8b949e;"></div>Jinja2 · Vanilla JS</div>
+      </div>
+    </section>
+
+    <!-- ── Covered Laws ──────────────────────────────────────── -->
+    <div class="divider fade-up">
+      <div class="divider-line"></div>
+      <div class="divider-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+      <div class="divider-line"></div>
+    </div>
+
+    <section class="fade-up">
+      <div class="section-label">Covered Laws</div>
+      <p style="color: var(--text-muted); font-weight: 300; line-height: 1.7; font-size: clamp(0.9rem, 2vw, 1rem); margin-bottom: 24px; max-width: 640px;">QanoonDaan's knowledge base currently covers the following Pakistani statutes. Answers are grounded only in these sources — if a question falls outside this scope, QanoonDaan will say so rather than guess.</p>
+      <div class="stack-grid">
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#c9a84c;"></div>The Constitution of Pakistan, 1973</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#f78166;"></div>Pakistan Penal Code, 1860 (PPC)</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#f78166;"></div>Code of Criminal Procedure, 1898 (CrPC)</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#f78166;"></div>Criminal Laws (Amendment) Act, 2023</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#22a863;"></div>Family Laws</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#22a863;"></div>Labour Laws</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#58a6ff;"></div>Prevention of Electronic Crimes Act, 2016 (PECA)</div>
+        <div class="stack-chip"><div class="stack-chip-dot" style="background:#58a6ff;"></div>PECA (Amendment) Act, 2025</div>
+      </div>
+    </section>
+
+    <!-- ── Developer ──────────────────────────────────────────── -->
+    <div class="divider fade-up">
+      <div class="divider-line"></div>
+      <div class="divider-icon">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="divider-line"></div>
+    </div>
+
+    <section class="fade-up">
+      <div class="section-label">Developer</div>
+
+      <div class="dev-card">
+
+        <!-- Portrait photo — links to portfolio -->
+        <a href="https://hasnainzainulabdinporfolio.vercel.app/" target="_blank" rel="noopener" class="dev-avatar-link">
+          <div class="dev-avatar">
+            <img src="/static/hasnain.jpg" alt="Hasnain Zainulabdin" />
+          </div>
+        </a>
+
+        <div class="dev-info">
+          <div class="dev-name">Hasnain Zainulabdin</div>
+          <div class="dev-role">AI / ML Engineer · Python Developer</div>
+          <p class="dev-bio">Software Engineering graduate from the University of Sindh, Jamshoro, and alumnus of the SMIT AI & Data Science program. Built QanoonDaan from scratch — PDF ingestion, hybrid retrieval, multilingual inference, and WhatsApp integration — as a practical demonstration of what RAG-powered AI can do for underserved communities in Pakistan.</p>
+          <div class="dev-links">
+            <a href="https://hasnainzainulabdinporfolio.vercel.app/" class="dev-link portfolio" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+              Portfolio
+            </a>
+            <a href="https://github.com/SyedHusnain20" class="dev-link" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              GitHub
+            </a>
+            <a href="https://linkedin.com/in/syed-hasnain" class="dev-link" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              LinkedIn
+            </a>
+            <a href="https://huggingface.co/spaces/SyedHusnain20/QanoonDaan" class="dev-link" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              Live Demo
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Other Projects ─────────────────────────────────────── -->
+    <div class="divider fade-up">
+      <div class="divider-line"></div>
+      <div class="divider-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/>
+          <rect x="2" y="15" width="6" height="6" rx="1"/><rect x="16" y="15" width="6" height="6" rx="1"/>
+        </svg>
+      </div>
+      <div class="divider-line"></div>
+    </div>
+
+    <section class="fade-up">
+      <div class="section-label">Other Projects</div>
+      <div class="projects-grid">
+
+        <!-- ShariahEase -->
+        <a href="https://huggingface.co/spaces/SyedHusnain20/ShariahEase" target="_blank" rel="noopener" class="project-card shariah fade-up">
+          <div class="project-icon project-icon-img">
+            <img src="/static/shariahease-icon.png" alt="ShariahEase" />
+          </div>
+          <div>
+            <div class="project-name">Shariah<span>Ease</span></div>
+            <p class="project-desc">An Islamic finance platform with a RAG chatbot, Zakat calculator, halal stock screener, Mudarabah profit simulator, and a WhatsApp bot — all grounded in Shariah principles and deployed on Hugging Face Spaces.</p>
+          </div>
+          <div class="project-tags">
+            <span class="project-tag">Islamic Finance</span>
+            <span class="project-tag">RAG Chatbot</span>
+            <span class="project-tag">WhatsApp Bot</span>
+            <span class="project-tag">FastAPI</span>
+          </div>
+          <div class="project-footer">
+            <div class="project-live">
+              <div class="project-live-dot"></div>
+              Live on HF Spaces
+            </div>
+            <div class="project-arrow">
+              <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </div>
+          </div>
+        </a>
+
+        <!-- ResuFit -->
+        <a href="https://huggingface.co/spaces/SyedHusnain20/ResuFit" target="_blank" rel="noopener" class="project-card resufit fade-up">
+          <div class="project-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <div>
+            <div class="project-name">Resu<span>Fit</span></div>
+            <p class="project-desc">An AI-powered resume screening API that scores candidate CVs against job descriptions using NLP. Built with FastAPI, spaCy, and Scikit-learn, containerised with Docker, and deployed on Hugging Face Spaces.</p>
+          </div>
+          <div class="project-tags">
+            <span class="project-tag">NLP</span>
+            <span class="project-tag">spaCy</span>
+            <span class="project-tag">FastAPI</span>
+            <span class="project-tag">Docker</span>
+          </div>
+          <div class="project-footer">
+            <div class="project-live" style="color:#58a6ff;">
+              <div class="project-live-dot" style="background:#58a6ff; box-shadow:none;"></div>
+              Live on HF Spaces
+            </div>
+            <div class="project-arrow">
+              <svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    QanoonDaan provides general legal information only, not legal advice. Consult a qualified lawyer for your specific situation.<br/>
+    Built with care by <a href="https://hasnainzainulabdinporfolio.vercel.app/" target="_blank" rel="noopener">Hasnain Zainulabdin</a> · Hyderabad, Pakistan
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(el => {
+        if (el.isIntersecting) {
+          el.target.classList.add('visible');
+          observer.unobserve(el.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>

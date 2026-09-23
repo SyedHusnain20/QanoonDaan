@@ -6,7 +6,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115.5-009688?style=flat-square&logo=fastapi)
 ![Groq](https://img.shields.io/badge/Groq-Llama3.3--70b-orange?style=flat-square)
 ![FAISS](https://img.shields.io/badge/FAISS-Vector%20Search-red?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+![License](https://img.shields.io/badge/License-Custom%20(Use%20Only)-lightgrey?style=flat-square)
 
 ---
 
@@ -355,7 +355,7 @@ QanoonDaan is an **informational tool only**. It does not constitute professiona
 
 ## 📄 License
 
-MIT License — free to use, modify, and distribute.
+This project is free to use. Modification and redistribution are not permitted without the author's consent.
 
 ---
 
@@ -371,3 +371,13 @@ MIT License — free to use, modify, and distribute.
 ---
 
 *Built with ❤️ for Pakistani citizens — making law accessible to everyone.*
+
+---
+
+## 👤 Author
+
+**Engr. Hasnain Zainulabdin**
+R&R Digital Solutions
+
+Contact: 03126641281 | [HasnainZainulabdin@gmail.com](mailto:HasnainZainulabdin@gmail.com)
+Website: https://hasnainzainulabdin.vercel.app/
