@@ -1,11 +1,16 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv() 
+load_dotenv()
+
+# ── LangSmith (observability) ───────────────────────────────────────────────────
+# Tracing is OFF unless LANGSMITH_TRACING=true and LANGSMITH_API_KEY are set
+# (in .env locally, or as Secrets on Hugging Face Spaces).
+os.environ.setdefault("LANGSMITH_PROJECT", "qanoondaan")
 
 # ── Groq API ────────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 # ── Embedding Model ────────────────────────────────────────────────────────────
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"   # fast, lightweight, good accuracy
 

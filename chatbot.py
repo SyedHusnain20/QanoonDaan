@@ -5,6 +5,7 @@ Pakistani Legal Advisory RAG Chatbot
 import json
 import re
 from groq import Groq, RateLimitError
+from langsmith import traceable, get_current_run_tree
 from retriever import LegalRetriever, _act_matches_source
 from config import GROQ_API_KEY, GROQ_MODEL, DISCLAIMER, TOP_K
 
@@ -76,20 +77,39 @@ def strip_foreign_script(text: str) -> str:
     return cleaned.strip()
 
 # ─── LLM Helper ──────────────────────────────────────────────────────────────
-def _call_groq(system_prompt: str, user_prompt: str, temperature: float = 0.2, max_tokens: int = 1024) -> str:
+def _tag_trace(**metadata) -> None:
+    """Attach metadata to the current LangSmith run (no-op when tracing is off)."""
+    run = get_current_run_tree()
+    if run is not None:
+        run.add_metadata(metadata)
+
+@traceable(
+    run_type="llm",
+    name="groq_chat",
+    metadata={"ls_provider": "groq", "ls_model_name": GROQ_MODEL},
+)
+def _chat_completion(messages: list[dict], temperature: float = 0.2, max_tokens: int = 1024) -> str:
+    """Single traced entry point for every Groq call in the pipeline."""
     try:
         response = client.chat.completions.create(
             model=GROQ_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
         )
         return response.choices[0].message.content.strip()
     except RateLimitError:
         raise GroqRateLimitError(RATE_LIMIT_MESSAGE)
+
+def _call_groq(system_prompt: str, user_prompt: str, temperature: float = 0.2, max_tokens: int = 1024) -> str:
+    return _chat_completion(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
 
 # ─── Classification & Translation ────────────────────────────────────────────
 CLASSIFICATION_SYSTEM_PROMPT = """You are a routing and translation assistant for QanoonDaan.
@@ -105,6 +125,7 @@ Examples:
 {"query_type": "section_lookup", "sections": ["365"], "act": "Pakistan Penal Code", "translated_question": "What is Section 365?", "legal_concepts": []}
 {"query_type": "general_legal", "sections": [], "act": "", "translated_question": "Boss not paying salary", "legal_concepts": ["non-payment of wages", "Payment of Wages Act"]}"""
 
+@traceable(run_type="chain", name="classify_and_translate")
 def classify_and_translate(question: str) -> dict:
     raw = _call_groq(CLASSIFICATION_SYSTEM_PROMPT, question, temperature=0.0, max_tokens=400)
     raw = raw.replace("```json", "").replace("```", "").strip()
@@ -289,6 +310,7 @@ def get_legal_answer(question: str, history: list[dict] | None = None) -> dict:
             "disclaimer": DISCLAIMER,
         }
 
+@traceable(run_type="chain", name="qanoondaan_pipeline")
 def _get_legal_answer_internal(question: str, history: list[dict] | None = None) -> dict:
     # 1. Classify & Translate
     classification = classify_and_translate(question)
@@ -297,11 +319,18 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
     requested_sections = classification["sections"]
     requested_act = classification["act"]
     legal_concepts = classification["legal_concepts"]
-    
+    _tag_trace(
+        query_type=query_type,
+        language=detect_language(question),
+        requested_sections=requested_sections,
+        requested_act=requested_act,
+    )
+
     print(f"🔎 Query type: {query_type} | sections: {requested_sections} | act: {requested_act!r} | concepts: {legal_concepts}")
 
     # 2a. Short-circuit
     if query_type in ("greeting", "off_topic", "harmful", "ambiguous"):
+        _tag_trace(outcome=f"short_circuit_{query_type}")
         return {
             "answer": short_circuit_reply(question, query_type),
             "sources": [],
@@ -334,12 +363,14 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
                     chunks.append(c)
 
     if not chunks:
+        _tag_trace(outcome="no_context_fallback")
         return {"answer": no_context_fallback_reply(question), "sources": [], "disclaimer": DISCLAIMER}
 
     # 3. Act-Aware Post-Retrieval Filtering
     if query_type == "section_lookup" and requested_sections:
         found = [s for s in requested_sections if section_found_in_chunks(s, chunks, act_hint=requested_act)]
         if not found:
+            _tag_trace(outcome="section_not_found")
             return {"answer": section_not_found_reply(question, requested_sections, requested_act), "sources": [], "disclaimer": DISCLAIMER}
 
             if requested_act:
@@ -375,47 +406,44 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
         if turn.get("role") in ("user", "assistant") and turn.get("content")
     ]
 
-    try:
-        answer_response = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[
-                {"role": "system", "content": ANSWER_SYSTEM_PROMPT},
-                *history_messages,
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-            max_tokens=1024,
-        )
-        answer = answer_response.choices[0].message.content.strip()
-    except RateLimitError:
-        raise GroqRateLimitError(RATE_LIMIT_MESSAGE)
+    answer = _chat_completion(
+        [
+            {"role": "system", "content": ANSWER_SYSTEM_PROMPT},
+            *history_messages,
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.2,
+        max_tokens=1024,
+    )
 
     # 5. Script Purity Safety Net
+    script_retry = False
+    script_stripped = False
     if contains_foreign_script(answer):
         print("⚠️ Foreign-script contamination detected — regenerating once.")
+        script_retry = True
         retry_messages = [
             {"role": "system", "content": ANSWER_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
             {"role": "assistant", "content": answer},
             {"role": "user", "content": "Your previous response contained characters from a non-Urdu script. Rewrite the ENTIRE answer using ONLY correct script characters."}
         ]
-        try:
-            retry_response = client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=retry_messages,
-                temperature=0.0,
-                max_tokens=1024,
-            )
-            answer = retry_response.choices[0].message.content.strip()
-        except RateLimitError:
-            raise GroqRateLimitError(RATE_LIMIT_MESSAGE)
+        answer = _chat_completion(retry_messages, temperature=0.0, max_tokens=1024)
 
         if contains_foreign_script(answer):
             print("⚠️ Still contaminated after retry — stripping foreign characters.")
             answer = strip_foreign_script(answer)
+            script_stripped = True
 
     # 6. Collect sources and return
     sources = list(dict.fromkeys(chunk["source"] for chunk in chunks))
+    _tag_trace(
+        outcome="answered",
+        num_chunks=len(chunks),
+        sources=sources,
+        script_retry=script_retry,
+        script_stripped=script_stripped,
+    )
     return {"answer": answer, "sources": sources, "disclaimer": DISCLAIMER}
 
 # ─── CLI Test ────────────────────────────────────────────────────────────────

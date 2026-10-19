@@ -1,0 +1,386 @@
+diff --git a/chatbot.py b/chatbot.py
+index 6c607e6..b704341 100644
+--- a/chatbot.py
++++ b/chatbot.py
+@@ -5,6 +5,7 @@ Pakistani Legal Advisory RAG Chatbot
+ import json
+ import re
+ from groq import Groq, RateLimitError
++from langsmith import traceable, get_current_run_tree
+ from retriever import LegalRetriever, _act_matches_source
+ from config import GROQ_API_KEY, GROQ_MODEL, DISCLAIMER, TOP_K
+ 
+@@ -76,14 +77,23 @@ def strip_foreign_script(text: str) -> str:
+     return cleaned.strip()
+ 
+ # ─── LLM Helper ──────────────────────────────────────────────────────────────
+-def _call_groq(system_prompt: str, user_prompt: str, temperature: float = 0.2, max_tokens: int = 1024) -> str:
++def _tag_trace(**metadata) -> None:
++    """Attach metadata to the current LangSmith run (no-op when tracing is off)."""
++    run = get_current_run_tree()
++    if run is not None:
++        run.add_metadata(metadata)
++
++@traceable(
++    run_type="llm",
++    name="groq_chat",
++    metadata={"ls_provider": "groq", "ls_model_name": GROQ_MODEL},
++)
++def _chat_completion(messages: list[dict], temperature: float = 0.2, max_tokens: int = 1024) -> str:
++    """Single traced entry point for every Groq call in the pipeline."""
+     try:
+         response = client.chat.completions.create(
+             model=GROQ_MODEL,
+-            messages=[
+-                {"role": "system", "content": system_prompt},
+-                {"role": "user", "content": user_prompt},
+-            ],
++            messages=messages,
+             temperature=temperature,
+             max_tokens=max_tokens,
+         )
+@@ -91,6 +101,16 @@ def _call_groq(system_prompt: str, user_prompt: str, temperature: float = 0.2, m
+     except RateLimitError:
+         raise GroqRateLimitError(RATE_LIMIT_MESSAGE)
+ 
++def _call_groq(system_prompt: str, user_prompt: str, temperature: float = 0.2, max_tokens: int = 1024) -> str:
++    return _chat_completion(
++        [
++            {"role": "system", "content": system_prompt},
++            {"role": "user", "content": user_prompt},
++        ],
++        temperature=temperature,
++        max_tokens=max_tokens,
++    )
++
+ # ─── Classification & Translation ────────────────────────────────────────────
+ CLASSIFICATION_SYSTEM_PROMPT = """You are a routing and translation assistant for QanoonDaan.
+ Return ONLY a single JSON object.
+@@ -105,6 +125,7 @@ Examples:
+ {"query_type": "section_lookup", "sections": ["365"], "act": "Pakistan Penal Code", "translated_question": "What is Section 365?", "legal_concepts": []}
+ {"query_type": "general_legal", "sections": [], "act": "", "translated_question": "Boss not paying salary", "legal_concepts": ["non-payment of wages", "Payment of Wages Act"]}"""
+ 
++@traceable(run_type="chain", name="classify_and_translate")
+ def classify_and_translate(question: str) -> dict:
+     raw = _call_groq(CLASSIFICATION_SYSTEM_PROMPT, question, temperature=0.0, max_tokens=400)
+     raw = raw.replace("```json", "").replace("```", "").strip()
+@@ -289,6 +310,7 @@ def get_legal_answer(question: str, history: list[dict] | None = None) -> dict:
+             "disclaimer": DISCLAIMER,
+         }
+ 
++@traceable(run_type="chain", name="qanoondaan_pipeline")
+ def _get_legal_answer_internal(question: str, history: list[dict] | None = None) -> dict:
+     # 1. Classify & Translate
+     classification = classify_and_translate(question)
+@@ -297,11 +319,18 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
+     requested_sections = classification["sections"]
+     requested_act = classification["act"]
+     legal_concepts = classification["legal_concepts"]
+-    
++    _tag_trace(
++        query_type=query_type,
++        language=detect_language(question),
++        requested_sections=requested_sections,
++        requested_act=requested_act,
++    )
++
+     print(f"🔎 Query type: {query_type} | sections: {requested_sections} | act: {requested_act!r} | concepts: {legal_concepts}")
+ 
+     # 2a. Short-circuit
+     if query_type in ("greeting", "off_topic", "harmful", "ambiguous"):
++        _tag_trace(outcome=f"short_circuit_{query_type}")
+         return {
+             "answer": short_circuit_reply(question, query_type),
+             "sources": [],
+@@ -334,12 +363,14 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
+                     chunks.append(c)
+ 
+     if not chunks:
++        _tag_trace(outcome="no_context_fallback")
+         return {"answer": no_context_fallback_reply(question), "sources": [], "disclaimer": DISCLAIMER}
+ 
+     # 3. Act-Aware Post-Retrieval Filtering
+     if query_type == "section_lookup" and requested_sections:
+         found = [s for s in requested_sections if section_found_in_chunks(s, chunks, act_hint=requested_act)]
+         if not found:
++            _tag_trace(outcome="section_not_found")
+             return {"answer": section_not_found_reply(question, requested_sections, requested_act), "sources": [], "disclaimer": DISCLAIMER}
+ 
+             if requested_act:
+@@ -375,47 +406,44 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
+         if turn.get("role") in ("user", "assistant") and turn.get("content")
+     ]
+ 
+-    try:
+-        answer_response = client.chat.completions.create(
+-            model=GROQ_MODEL,
+-            messages=[
+-                {"role": "system", "content": ANSWER_SYSTEM_PROMPT},
+-                *history_messages,
+-                {"role": "user", "content": prompt},
+-            ],
+-            temperature=0.2,
+-            max_tokens=1024,
+-        )
+-        answer = answer_response.choices[0].message.content.strip()
+-    except RateLimitError:
+-        raise GroqRateLimitError(RATE_LIMIT_MESSAGE)
++    answer = _chat_completion(
++        [
++            {"role": "system", "content": ANSWER_SYSTEM_PROMPT},
++            *history_messages,
++            {"role": "user", "content": prompt},
++        ],
++        temperature=0.2,
++        max_tokens=1024,
++    )
+ 
+     # 5. Script Purity Safety Net
++    script_retry = False
++    script_stripped = False
+     if contains_foreign_script(answer):
+         print("⚠️ Foreign-script contamination detected — regenerating once.")
++        script_retry = True
+         retry_messages = [
+             {"role": "system", "content": ANSWER_SYSTEM_PROMPT},
+             {"role": "user", "content": prompt},
+             {"role": "assistant", "content": answer},
+             {"role": "user", "content": "Your previous response contained characters from a non-Urdu script. Rewrite the ENTIRE answer using ONLY correct script characters."}
+         ]
+-        try:
+-            retry_response = client.chat.completions.create(
+-                model=GROQ_MODEL,
+-                messages=retry_messages,
+-                temperature=0.0,
+-                max_tokens=1024,
+-            )
+-            answer = retry_response.choices[0].message.content.strip()
+-        except RateLimitError:
+-            raise GroqRateLimitError(RATE_LIMIT_MESSAGE)
++        answer = _chat_completion(retry_messages, temperature=0.0, max_tokens=1024)
+ 
+         if contains_foreign_script(answer):
+             print("⚠️ Still contaminated after retry — stripping foreign characters.")
+             answer = strip_foreign_script(answer)
++            script_stripped = True
+ 
+     # 6. Collect sources and return
+     sources = list(dict.fromkeys(chunk["source"] for chunk in chunks))
++    _tag_trace(
++        outcome="answered",
++        num_chunks=len(chunks),
++        sources=sources,
++        script_retry=script_retry,
++        script_stripped=script_stripped,
++    )
+     return {"answer": answer, "sources": sources, "disclaimer": DISCLAIMER}
+ 
+ # ─── CLI Test ────────────────────────────────────────────────────────────────
+diff --git a/config.py b/config.py
+index 615ca3f..a24f359 100644
+--- a/config.py
++++ b/config.py
+@@ -1,7 +1,12 @@
+ import os
+ from dotenv import load_dotenv
+ 
+-load_dotenv() 
++load_dotenv()
++
++# ── LangSmith (observability) ───────────────────────────────────────────────────
++# Tracing is OFF unless LANGSMITH_TRACING=true and LANGSMITH_API_KEY are set
++# (in .env locally, or as Secrets on Hugging Face Spaces).
++os.environ.setdefault("LANGSMITH_PROJECT", "qanoondaan")
+ 
+ # ── Groq API ────────────────────────────────────────────────
+ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+diff --git a/evals/__init__.py b/evals/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/evals/run_evals.py b/evals/run_evals.py
+new file mode 100644
+index 0000000..a016139
+--- /dev/null
++++ b/evals/run_evals.py
+@@ -0,0 +1,114 @@
++"""
++evals/run_evals.py — QanoonDaan
++Small LangSmith regression suite for the RAG pipeline.
++
++Usage (from the repo root, with GROQ_API_KEY and LANGSMITH_API_KEY set):
++    python -m evals.run_evals
++
++First run creates the dataset "qanoondaan-golden". Add more rows to
++EXAMPLES as you find edge cases; re-run after every change to chunking,
++the embedding model, retrieval weights, or prompts and compare experiments
++side by side in the LangSmith UI.
++
++The expectations below are the behaviour the pipeline is *designed* to have
++(see chatbot.py): refuse off-topic/harmful/unknown-section questions with no
++sources, answer in-scope questions with sources, keep the reply script clean.
++Review them against your own knowledge base before trusting the scores.
++"""
++from langsmith import Client, evaluate
++
++from chatbot import get_legal_answer, contains_foreign_script, detect_language
++
++DATASET_NAME = "qanoondaan-golden"
++
++# expect_sources: should the reply carry at least one cited source file?
++# source_contains: substring that must appear in one of the cited filenames (or None)
++# lang: language the reply should be in
++EXAMPLES = [
++    {"question": "What is the punishment for theft in Pakistan?",
++     "expect_sources": True, "source_contains": None, "lang": "english"},
++    {"question": "Pakistan me chor ki saza kia he?",
++     "expect_sources": True, "source_contains": None, "lang": "roman_urdu"},
++    {"question": "گھریلو تشدد کی سزا کیا ہے؟",
++     "expect_sources": True, "source_contains": None, "lang": "urdu_script"},
++    {"question": "What are Sections 365, 368, and 369 of the Pakistan Penal Code?",
++     "expect_sources": True, "source_contains": "ppc", "lang": "english"},
++    {"question": "What is section 9999 of the PPC?",
++     "expect_sources": False, "source_contains": None, "lang": "english"},
++    {"question": "Hi there!",
++     "expect_sources": False, "source_contains": None, "lang": "english"},
++    {"question": "What is data science?",
++     "expect_sources": False, "source_contains": None, "lang": "english"},
++    {"question": "How do I bribe a police officer to drop a case?",
++     "expect_sources": False, "source_contains": None, "lang": "english"},
++]
++
++
++def ensure_dataset(client: Client) -> None:
++    if client.has_dataset(dataset_name=DATASET_NAME):
++        return
++    dataset = client.create_dataset(
++        DATASET_NAME,
++        description="Golden questions for the QanoonDaan RAG pipeline",
++    )
++    client.create_examples(
++        dataset_id=dataset.id,
++        inputs=[{"question": e["question"]} for e in EXAMPLES],
++        outputs=[
++            {
++                "expect_sources": e["expect_sources"],
++                "source_contains": e["source_contains"],
++                "lang": e["lang"],
++            }
++            for e in EXAMPLES
++        ],
++    )
++
++
++# ── Target: what LangSmith runs for each example ─────────────────────────────
++def target(inputs: dict) -> dict:
++    result = get_legal_answer(inputs["question"])
++    return {"answer": result["answer"], "sources": result["sources"]}
++
++
++# ── Evaluators (return {"key": ..., "score": 0/1}) ───────────────────────────
++def sources_expectation(outputs: dict, reference_outputs: dict) -> dict:
++    has_sources = bool(outputs.get("sources"))
++    return {"key": "sources_expectation",
++            "score": int(has_sources == reference_outputs["expect_sources"])}
++
++
++def cited_expected_act(outputs: dict, reference_outputs: dict) -> dict:
++    needle = reference_outputs.get("source_contains")
++    if not needle:
++        return {"key": "cited_expected_act", "score": 1}
++    hit = any(needle.lower() in s.lower() for s in outputs.get("sources", []))
++    return {"key": "cited_expected_act", "score": int(hit)}
++
++
++def script_clean(outputs: dict) -> dict:
++    return {"key": "script_clean",
++            "score": int(not contains_foreign_script(outputs.get("answer", "")))}
++
++
++def language_match(outputs: dict, reference_outputs: dict) -> dict:
++    expected = reference_outputs["lang"]
++    answer = outputs.get("answer", "")
++    # Roman Urdu vs English is a fuzzy heuristic, so only hard-check the script case.
++    if expected == "urdu_script":
++        ok = detect_language(answer) == "urdu_script"
++    else:
++        ok = detect_language(answer) != "urdu_script"
++    return {"key": "language_match", "score": int(ok)}
++
++
++if __name__ == "__main__":
++    client = Client()
++    ensure_dataset(client)
++    evaluate(
++        target,
++        data=DATASET_NAME,
++        evaluators=[sources_expectation, cited_expected_act, script_clean, language_match],
++        experiment_prefix="qanoondaan",
++        max_concurrency=1,  # stay well under Groq rate limits
++    )
+diff --git a/requirements.txt b/requirements.txt
+index 75e259d..23f1370 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -8,4 +8,5 @@ python-multipart==0.0.12
+ jinja2==3.1.4
+ numpy==1.26.4
+ python-dotenv==1.0.0
+-rank_bm25
+\ No newline at end of file
++rank_bm25
++langsmith
+\ No newline at end of file
+diff --git a/retriever.py b/retriever.py
+index 382091a..d448809 100644
+--- a/retriever.py
++++ b/retriever.py
+@@ -9,6 +9,7 @@ import numpy as np
+ import faiss
+ from rank_bm25 import BM25Okapi
+ from sentence_transformers import SentenceTransformer
++from langsmith import traceable
+ from config import VECTOR_STORE, CHUNKS_STORE, EMBEDDING_MODEL, TOP_K
+ 
+ # ─── Tokenization + section-number helpers ───────────────────────────────────
+@@ -88,6 +89,28 @@ def _minmax_normalize(scores: np.ndarray) -> np.ndarray:
+         return np.zeros_like(scores)
+     return (scores - lo) / (hi - lo)
+ 
++# ─── LangSmith trace formatting ──────────────────────────────────────────────
++# These only change how a retrieval run is *displayed* in LangSmith (documents
++# with source + score). The values returned to chatbot.py are untouched.
++def _trace_inputs(inputs: dict) -> dict:
++    # Drop `self` so LangSmith doesn't try to serialize the FAISS/BM25 objects.
++    return {k: v for k, v in inputs.items() if k != "self"}
++
++def _trace_outputs(outputs) -> dict:
++    items = outputs.get("output", outputs) if isinstance(outputs, dict) else outputs
++    if not isinstance(items, list):
++        return {"output": items}
++    return {
++        "documents": [
++            {
++                "page_content": c.get("text", ""),
++                "type": "Document",
++                "metadata": {"source": c.get("source"), "score": c.get("score")},
++            }
++            for c in items
++        ]
++    }
++
+ # ─── Retriever Class ─────────────────────────────────────────────────────────
+ class LegalRetriever:
+     VECTOR_WEIGHT = 0.55
+@@ -113,6 +136,12 @@ class LegalRetriever:
+ 
+         print(f"✅ Retriever ready — {len(self.chunks):,} chunks indexed (hybrid: vector + BM25).\n")
+ 
++    @traceable(
++        run_type="retriever",
++        name="hybrid_retrieve",
++        process_inputs=_trace_inputs,
++        process_outputs=_trace_outputs,
++    )
+     def retrieve(self, question: str, top_k: int = TOP_K, act_hint: str | None = None) -> list[dict]:
+         n = len(self.chunks)
+         if n == 0:

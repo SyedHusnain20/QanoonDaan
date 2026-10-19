@@ -9,6 +9,7 @@ import numpy as np
 import faiss
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
+from langsmith import traceable
 from config import VECTOR_STORE, CHUNKS_STORE, EMBEDDING_MODEL, TOP_K
 
 # ─── Tokenization + section-number helpers ───────────────────────────────────
@@ -88,6 +89,28 @@ def _minmax_normalize(scores: np.ndarray) -> np.ndarray:
         return np.zeros_like(scores)
     return (scores - lo) / (hi - lo)
 
+# ─── LangSmith trace formatting ──────────────────────────────────────────────
+# These only change how a retrieval run is *displayed* in LangSmith (documents
+# with source + score). The values returned to chatbot.py are untouched.
+def _trace_inputs(inputs: dict) -> dict:
+    # Drop `self` so LangSmith doesn't try to serialize the FAISS/BM25 objects.
+    return {k: v for k, v in inputs.items() if k != "self"}
+
+def _trace_outputs(outputs) -> dict:
+    items = outputs.get("output", outputs) if isinstance(outputs, dict) else outputs
+    if not isinstance(items, list):
+        return {"output": items}
+    return {
+        "documents": [
+            {
+                "page_content": c.get("text", ""),
+                "type": "Document",
+                "metadata": {"source": c.get("source"), "score": c.get("score")},
+            }
+            for c in items
+        ]
+    }
+
 # ─── Retriever Class ─────────────────────────────────────────────────────────
 class LegalRetriever:
     VECTOR_WEIGHT = 0.55
@@ -113,6 +136,12 @@ class LegalRetriever:
 
         print(f"✅ Retriever ready — {len(self.chunks):,} chunks indexed (hybrid: vector + BM25).\n")
 
+    @traceable(
+        run_type="retriever",
+        name="hybrid_retrieve",
+        process_inputs=_trace_inputs,
+        process_outputs=_trace_outputs,
+    )
     def retrieve(self, question: str, top_k: int = TOP_K, act_hint: str | None = None) -> list[dict]:
         n = len(self.chunks)
         if n == 0:
