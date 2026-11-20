@@ -373,25 +373,28 @@ def _get_legal_answer_internal(question: str, history: list[dict] | None = None)
             _tag_trace(outcome="section_not_found")
             return {"answer": section_not_found_reply(question, requested_sections, requested_act), "sources": [], "disclaimer": DISCLAIMER}
 
-            if requested_act:
-        # Updated regex to match bare numbers at the start of a line
-                section_pattern_cache = {
-                    s: re.compile(
-                        rf"(?:section|sec\.?)\s*0*{re.escape(s)}\b"
-                        rf"|^\s*0*{re.escape(s)}\s*[.\-]",
-                        re.IGNORECASE | re.MULTILINE
-            )
-            for s in requested_sections
-        }
-            
+        if requested_act:
+            # Match bare numbers at the start of a line too (e.g. "365. Whoever...")
+            section_pattern_cache = {
+                s: re.compile(
+                    rf"(?:section|sec\.?)\s*0*{re.escape(s)}\b"
+                    rf"|^\s*0*{re.escape(s)}\s*[.\-]",
+                    re.IGNORECASE | re.MULTILINE,
+                )
+                for s in requested_sections
+            }
+
             def _chunk_is_safe_to_keep(chunk: dict) -> bool:
-                chunk_mentions_requested_section = any(pat.search(chunk["text"]) for pat in section_pattern_cache.values())
+                chunk_mentions_requested_section = any(
+                    pat.search(chunk["text"]) for pat in section_pattern_cache.values()
+                )
                 if not chunk_mentions_requested_section:
                     return True
                 return _act_matches_source(requested_act, chunk.get("source", ""))
 
             chunks = [c for c in chunks if _chunk_is_safe_to_keep(c)]
             if not chunks:
+                _tag_trace(outcome="section_not_found")
                 return {"answer": section_not_found_reply(question, requested_sections, requested_act), "sources": [], "disclaimer": DISCLAIMER}
 
     # 4. Build prompt & generate answer

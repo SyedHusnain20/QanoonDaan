@@ -4,8 +4,8 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115.5-009688?style=flat-square&logo=fastapi)
-![Groq](https://img.shields.io/badge/Groq-Llama3.3--70b-orange?style=flat-square)
-![FAISS](https://img.shields.io/badge/FAISS-Vector%20Search-red?style=flat-square)
+![Groq](https://img.shields.io/badge/Groq-GPT--OSS--120B-orange?style=flat-square)
+![FAISS](https://img.shields.io/badge/FAISS%20%2B%20BM25-Hybrid%20Search-red?style=flat-square)
 ![License](https://img.shields.io/badge/License-Custom%20(Use%20Only)-lightgrey?style=flat-square)
 
 ---
@@ -32,10 +32,14 @@ Unlike generic AI assistants, QanoonDaan is grounded in **real Pakistani legal d
 
 ### 🧠 AI & RAG Pipeline
 - **Retrieval-Augmented Generation (RAG)** — answers are grounded in real legal documents, not LLM guesswork
-- **Semantic search** via FAISS — finds the most relevant legal clauses for any question
-- **Groq (Llama 3.3-70b)** — fast, accurate, open-source LLM for answer generation
-- **Top-3 chunk retrieval** — pulls the 3 most relevant legal excerpts per query
+- **Hybrid search** — FAISS semantic search (55%) blended with BM25 keyword search (45%), so both meaning and exact words count
+- **Section-number boost** — asking for "Section 420 of the PPC" boosts chunks from the matching Act that contain that section
+- **Smart query classifier** — one LLM call labels each question (legal question, section lookup, greeting, off-topic, harmful, unclear) and translates it to English
+- **Groq (`openai/gpt-oss-120b`)** — fast open-weight LLM for answer generation
+- **Adaptive retrieval** — pulls the top 5 chunks for general questions and the top 8 for section lookups
+- **Chat memory** — the last 5 exchanges are sent along so follow-up questions make sense
 - **Low temperature (0.2)** — keeps answers factual, not creative
+- **LangSmith tracing and evals** — optional tracing of every pipeline step, plus a small regression test suite
 
 ### 🌐 Multilingual Support
 - **English** — primary language, full support
@@ -67,12 +71,14 @@ Unlike generic AI assistants, QanoonDaan is grounded in **real Pakistani legal d
 ### 🔒 Safety & Ethics
 - **Legal disclaimer** — every answer includes: *"This is not professional legal advice"*
 - **Honest refusals** — if the bot can't find relevant context, it says so clearly instead of hallucinating
+- **Script purity check** — if the reply contains stray characters from the wrong script, it is regenerated once, then cleaned
+- **Rate-limit handling** — a friendly "high traffic" message when the Groq limit is hit
 - **XSS protection** — all user input is HTML-escaped before rendering
 - **Input validation** — empty and overly long questions are rejected gracefully
 - **No source exposure** — internal PDF filenames are never shown to users
 
 ### ⚡ Performance
-- **FAISS IndexFlatIP** — cosine similarity search, sub-second retrieval
+- **FAISS IndexFlatIP + BM25** — cosine similarity plus keyword scoring, sub-second retrieval
 - **Models loaded once at startup** — no reload delay per request
 - **4,387 chunks indexed** from 8 legal PDFs
 - **Uvicorn ASGI server** — async, production-grade
@@ -104,14 +110,20 @@ QanoonDaan is trained on **8 official Pakistani legal documents**:
 |---|---|---|
 | **Web Framework** | FastAPI | 0.115.5 |
 | **Server** | Uvicorn | 0.32.0 |
-| **LLM** | Groq — Llama 3.3-70b-versatile | latest |
+| **LLM** | Groq — `openai/gpt-oss-120b` | groq 0.13.0 |
 | **Embeddings** | sentence-transformers (all-MiniLM-L6-v2) | 3.3.1 |
 | **Vector Search** | FAISS (CPU) | 1.9.0 |
+| **Keyword Search** | rank_bm25 (BM25Okapi) | latest |
+| **Math** | NumPy | 1.26.4 |
 | **PDF Parsing** | PyPDF2 | 3.0.1 |
+| **Form Handling** | python-multipart | 0.0.12 |
 | **Templating** | Jinja2 | 3.1.4 |
-| **Env Management** | python-dotenv | latest |
+| **Env Management** | python-dotenv | 1.0.0 |
+| **Observability and Evals** | LangSmith | latest |
+| **Container** | Docker (python:3.10-slim) | — |
+| **Hosting** | Hugging Face Spaces (port 7860) | — |
 | **Voice Input** | Web Speech API (browser built-in) | — |
-| **Fonts** | Playfair Display + DM Sans (Google Fonts) | — |
+| **Fonts** | Playfair Display, DM Sans, DM Mono (Google Fonts) | — |
 
 ---
 
@@ -135,20 +147,29 @@ qanoondaan/
 │   └── chunks.pkl                   # Original text chunks
 │
 ├── templates/
-│   └── index.html                   # Chat UI (Jinja2 template)
+│   ├── index.html                   # Chat UI (Jinja2 template)
+│   └── about.html                   # About page
 │
 ├── static/
-│   └── style.css                    # Dark/light theme styles
+│   ├── style.css                    # Dark/light theme styles
+│   ├── hasnain.jpg                  # Developer photo (About page)
+│   └── shariahease-icon.png         # Project icon (About page)
+│
+├── evals/
+│   └── run_evals.py                 # LangSmith regression tests
 │
 ├── ingest.py                        # PDF → chunks → embeddings → FAISS
-├── retriever.py                     # FAISS semantic search
-├── chatbot.py                       # Translation + RAG + Groq LLM
+├── retriever.py                     # Hybrid search (FAISS + BM25 + section boost)
+├── chatbot.py                       # Classifier + translation + RAG + Groq LLM
 ├── main.py                          # FastAPI routes
+├── app.py                           # Entry point for Hugging Face Spaces
 ├── config.py                        # All settings and constants
-├── requirements.txt                 # Pinned dependencies
-├── .env                             # Your API key (never commit)
-├── .env.example                     # Template for .env
+├── debug_db.py                      # Checks which PDFs are in the index
+├── Dockerfile                       # Container build for Hugging Face Spaces
+├── requirements.txt                 # Dependencies
+├── .env                             # Your API keys (never commit)
 ├── .gitignore                       # Protects secrets and generated files
+├── .gitattributes                   # Git LFS rules for PDFs and index files
 └── README.md                        # This file
 ```
 
@@ -186,15 +207,16 @@ qanoondaan/
   User: "Pakistan me chor ki saza kia he?"
                     │
                     ▼
-        Groq translates to English:
+        Groq classifies the question and
+        translates it to English:
         "What is the punishment for theft?"
                     │
                     ▼
-        FAISS retrieves top 3 relevant
-        legal chunks from the index
+        Hybrid search (FAISS + BM25) retrieves
+        the top relevant legal chunks
                     │
                     ▼
-        Groq (Llama 3.3-70b) receives:
+        Groq (gpt-oss-120b) receives:
         ┌──────────────────────────────────┐
         │ Context: [PPC Section 379]       │
         │          [CrPC Section 54]       │
@@ -218,8 +240,8 @@ qanoondaan/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/qanoondaan.git
-cd qanoondaan
+git clone https://github.com/SyedHusnain20/QanoonDaan.git
+cd QanoonDaan
 ```
 
 ### 2. Create and Activate Virtual Environment
@@ -239,12 +261,15 @@ pip install -r requirements.txt
 ```
 
 ### 4. Set Up Environment Variables
-```bash
-cp .env.example .env
-```
-Open `.env` and add your Groq API key:
+Create a file named `.env` in the project root and add your Groq API key:
 ```
 GROQ_API_KEY=gsk_your_key_here
+```
+
+Optional — to turn on LangSmith tracing, also add:
+```
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your_langsmith_key_here
 ```
 
 ### 5. Add Legal PDFs
@@ -292,6 +317,16 @@ Test the retriever directly:
 python retriever.py
 ```
 
+Check which PDFs are in the index:
+```bash
+python debug_db.py
+```
+
+Run the LangSmith regression tests (needs `GROQ_API_KEY` and `LANGSMITH_API_KEY`):
+```bash
+python -m evals.run_evals
+```
+
 Check the API health:
 ```
 GET http://localhost:8000/health
@@ -309,7 +344,8 @@ http://localhost:8000/docs
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/` | Serves the chat UI |
-| `POST` | `/ask` | Accepts `question` (form field), returns JSON answer |
+| `GET` | `/about` | Serves the About page |
+| `POST` | `/ask` | Accepts `question` and optional `history` (JSON string of recent turns) as form fields, returns JSON answer |
 | `GET` | `/health` | Health check |
 | `GET` | `/docs` | Swagger UI for API testing |
 
@@ -336,8 +372,9 @@ curl -X POST http://localhost:8000/ask \
 |---|---|
 | RAG Pipeline | Production-level AI architecture |
 | Pakistani Law Domain | Real, local, unsolved problem |
-| FAISS Semantic Search | Strong NLP + vector search knowledge |
-| Groq + Llama 3.3 | Modern open-source LLM integration |
+| Hybrid Search (FAISS + BM25) | Strong NLP + vector and keyword search knowledge |
+| Groq + gpt-oss-120b | Modern open-weight LLM integration |
+| LangSmith Tracing + Evals | Production habits: observability and regression testing |
 | Multilingual (EN/UR/Roman UR) | Localization + translation pipeline |
 | Voice Input (Web Speech API) | Accessibility + UX thinking |
 | Dark/Light Theme | Frontend polish |
@@ -362,8 +399,9 @@ This project is free to use. Modification and redistribution are not permitted w
 ## 🙏 Acknowledgements
 
 - [Groq](https://groq.com) — blazing fast LLM inference
-- [Meta LLaMA](https://llama.meta.com) — open-source LLM
+- OpenAI gpt-oss — open-weight LLM
 - [FAISS by Meta AI](https://faiss.ai) — vector similarity search
+- [LangSmith](https://smith.langchain.com) — tracing and evaluation
 - [sentence-transformers](https://www.sbert.net) — semantic embeddings
 - [FastAPI](https://fastapi.tiangolo.com) — modern Python web framework
 - [pakistancode.gov.pk](https://pakistancode.gov.pk) — official legal documents
